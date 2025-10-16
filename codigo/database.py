@@ -1,62 +1,39 @@
 import mysql.connector
-from mysql.connector import Error
 
-class Database:
-    def __init__(self, host, database, user, password):
-        # Configurações de conexão para o seu MySQL local
-        self.host = host
-        self.database = database
-        self.user = user
-        self.password = password
-        self.conn = None
+# 🔗 Faz a conexão com o MySQL
+conexao = mysql.connector.connect(
+    host="localhost",
+    user="root",           # seu usuário MySQL
+    password="12345678",  # sua senha
+    database="loja_virtual"  # nome do banco de dados (crie antes)
+)
 
-    def connect(self):
-        """Estabelece a conexão com o banco de dados MySQL."""
-        try:
-            self.conn = mysql.connector.connect(
-                host=self.host,
-                database=self.database,
-                user=self.user,
-                password=self.password
-            )
-            if self.conn.is_connected():
-                print(f"Conexão bem-sucedida ao banco de dados '{self.database}'.")
-        except Error as e:
-            print(f"Erro ao conectar ao MySQL: {e}")
-            self.conn = None
+cursor = conexao.cursor()
 
-    def disconnect(self):
-        """Fecha a conexão com o banco de dados."""
-        if self.conn and self.conn.is_connected():
-            self.conn.close()
-            print("Conexão com o MySQL fechada.")
+# 🧱 Criação da tabela compatível com MySQL
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS produtos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    preco DECIMAL(10,2) NOT NULL,
+    categoria VARCHAR(50),
+    estoque INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+""")
 
-    def execute_query(self, query, params=None, fetch=False):
-        """Executa uma consulta (INSERT, UPDATE, DELETE ou SELECT)."""
-        if not self.conn or not self.conn.is_connected():
-            print("Erro: Não há conexão com o banco de dados.")
-            return []
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS vendas (
+id SERIAL PRIMARY KEY,
+produto_id INT,
+quantidade INT NOT NULL,
+data_venda TIMESTAMP DEFAULT NOW(),
+valor_total DECIMAL(10,2) NOT NULL,
+FOREIGN KEY (produto_id) REFERENCES produtos(id)
+);""")
 
-        cursor = self.conn.cursor(dictionary=True) # dictionary=True retorna resultados como dicionários (mais fácil de usar)
-        try:
-            cursor.execute(query, params or ())
-            
-            if query.strip().upper().startswith(('INSERT', 'UPDATE', 'DELETE')):
-                self.conn.commit()
-                if query.strip().upper().startswith('INSERT'):
-                    # Retorna o ID da última linha inserida
-                    return cursor.lastrowid 
-                return True
-            
-            if fetch:
-                # Para consultas SELECT
-                return cursor.fetchall()
-            
-            return True
+conexao.commit()
+cursor.close()
+conexao.close()
 
-        except Error as e:
-            print(f"Erro ao executar a consulta: {e}")
-            self.conn.rollback() # Desfaz alterações em caso de erro
-            return [] if fetch else False
-        finally:
-            cursor.close()
+print(" Tabela 'produtos' criada com sucesso!")
