@@ -17,7 +17,7 @@ SELECT p.categoria,
        SUM(v.valor_total) AS receita_total
 FROM vendas v
 JOIN produtos p ON p.id = v.produto_id
-WHERE v.data_venda >= datetime('now', '-30 days')
+WHERE v.data_venda >= now() - INTERVAL 30 DAY
 GROUP BY p.categoria
 ORDER BY receita_total DESC;
 
