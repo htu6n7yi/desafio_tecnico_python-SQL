@@ -14,7 +14,7 @@ def get_connection():
     try:
         conexao = mysql.connector.connect(**config_db)
         if conexao.is_connected():
-            print("Conexão bem-sucedida ao banco de dados MySQL")
+            print("Conexao bem-sucedida ao banco de dados MySQL")
             return conexao
     except Error as e:
         print(f"Erro ao conectar ao MySQL: {e}")
