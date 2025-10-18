@@ -70,3 +70,15 @@ class VendaRepo:
                 conn.autocommit = True # Restaura o autocommit
                 conn.close()
 
+  def listar_vendas(self):
+      conn = get_connection()
+      cursor = conn.cursor(dictionary=True)
+
+      sql = "select * from vendas"
+      cursor.execute(sql)
+      vendas = cursor.fetchall()
+      
+      cursor.close()
+      conn.close()
+      
+      return vendas

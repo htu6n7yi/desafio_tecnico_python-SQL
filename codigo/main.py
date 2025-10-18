@@ -53,6 +53,10 @@ def demo():
         except Exception as e:
             print(f"Erro ao registrar venda: {e}")
 
+        print('\n--- Vendas (listar) ---')
+        for venda in v.listar_vendas():
+            print(venda)
+
     except Exception as e:
         print(f"\nErro na demonstração. Verifique a conexão e o schema do banco de dados: {e}")
 
