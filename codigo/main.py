@@ -1,7 +1,7 @@
 from pathlib import Path
 from database import init_db, config_db, get_connection 
 from produto import ProdutoRepo
-# from venda import VendaRepo
+from venda import VendaRepo
 import datetime
 
 BASE = Path(__file__).resolve().parent # Agora o BASE é a pasta onde está este script
@@ -25,6 +25,7 @@ def bootstrap():
 
 def demo():
     p = ProdutoRepo() 
+    v = VendaRepo()
     
     try:
         # Tenta conectar uma vez para garantir que as credenciais estão ok antes dos repositórios
@@ -43,7 +44,15 @@ def demo():
     
         print('\n--- Buscar produto id=21 ---')
         print(p.buscar_por_id(21))
-        
+
+        print('\n--- Registrar venda: produto_id=21, quantidade=2 ---')
+        try:
+            venda_id, total = v.registrar_venda(21, 2)
+            print('Venda registrada id=', venda_id, 'total=', total)
+
+        except Exception as e:
+            print(f"Erro ao registrar venda: {e}")
+
     except Exception as e:
         print(f"\nErro na demonstração. Verifique a conexão e o schema do banco de dados: {e}")
 
