@@ -74,7 +74,15 @@ class VendaRepo:
       conn = get_connection()
       cursor = conn.cursor(dictionary=True)
 
-      sql = "select * from vendas"
+      sql = """SELECT 
+                    v.id AS venda_id, 
+                    p.nome AS produto_nome, 
+                    v.quantidade,
+                    v.valor_total, 
+                    v.data_venda
+                FROM vendas v
+                JOIN produtos p ON v.produto_id = p.id
+                ORDER BY v.data_venda DESC"""
       cursor.execute(sql)
       vendas = cursor.fetchall()
       
@@ -82,3 +90,33 @@ class VendaRepo:
       conn.close()
       
       return vendas
+  
+  def buscar_por_periodo(self, data_inicio, data_fim):
+        conn = None
+        try:
+            conn = get_connection()
+            cursor = conn.cursor(dictionary=True) 
+            
+            # Consulta na tabela vendas (plural)
+            sql = """
+                SELECT 
+                    v.id AS venda_id, 
+                    p.nome AS produto_nome, 
+                    v.quantidade,
+                    v.valor_total, 
+                    v.data_venda
+                FROM vendas v
+                JOIN produtos p ON v.produto_id = p.id
+                WHERE v.data_venda BETWEEN %s AND %s 
+                ORDER BY v.data_venda DESC
+            """
+            cursor.execute(sql, (data_inicio, data_fim))
+            return cursor.fetchall()
+            
+        except Exception as e:
+            print(f"Erro ao buscar vendas por período: {e}")
+            return []
+            
+        finally:
+            if conn:
+                conn.close()

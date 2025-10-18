@@ -57,6 +57,12 @@ def demo():
         for venda in v.listar_vendas():
             print(venda)
 
+        print('\n--- Buscar vendas últimos 30 dias ---')
+        fim = datetime.datetime.now().isoformat()
+        inicio = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
+        for venda in v.buscar_por_periodo(inicio, fim):
+            print(venda)
+
     except Exception as e:
         print(f"\nErro na demonstração. Verifique a conexão e o schema do banco de dados: {e}")
 
