@@ -63,6 +63,10 @@ def demo():
         for venda in v.buscar_por_periodo(inicio, fim):
             print(venda)
 
+        print('\n--- Criar Produto Novo ---')
+        novo_id = p.criar_produto('computador', 1000.00, 'tecnologia', 10)
+        print(f"Produto 'computador' criado com ID: {novo_id}")
+
     except Exception as e:
         print(f"\nErro na demonstração. Verifique a conexão e o schema do banco de dados: {e}")
 
