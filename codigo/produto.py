@@ -68,3 +68,25 @@ class ProdutoRepo:
         finally:
             if conn:
                 conn.close()
+
+    def criar_produto(self, nome, preco, categoria, estoque):
+        conn = get_connection()
+        cursor = conn.cursor()
+        sql = "INSERT INTO produtos (nome, preco, categoria, estoque) VALUES (%s, %s, %s, %s)"
+        cursor.execute(sql, (nome, preco, categoria, estoque))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return cursor.lastrowid
+
+
+    def atualizar_estoque(self, produto_id, novo_estoque):
+        conn = get_connection()
+        cursor = conn.cursor()
+        sql = "UPDATE produtos SET estoque = %s WHERE id = %s"
+        cursor.execute(sql, (novo_estoque, produto_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+
