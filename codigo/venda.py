@@ -1,6 +1,6 @@
 # venda.py (Exemplo Básico - você deve implementar a lógica de negócio!)
 from database import get_connection
-# ... (provavelmente você precisará do ProdutoRepo para atualizar estoque e buscar preço)
+from exceptions import ProdutoNaoEncontradoError, EstoqueInsuficienteError
 
 class VendaRepo:
   def registrar_venda(self, produto_id, quantidade):
