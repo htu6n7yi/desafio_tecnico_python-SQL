@@ -9,4 +9,8 @@ export const buscarTodasVendas = async () => {
         console.error(error);
         return []; // Retorna lista vazia para não quebrar o map/length
     }
+
 };
+
+
+//falta olhar no nmo back oq esta acontecenfdo com a api vendas pois nao esta renderizando nada
