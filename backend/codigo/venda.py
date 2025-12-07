@@ -1,9 +1,92 @@
-# venda.py (Exemplo Básico - você deve implementar a lógica de negócio!)
+# venda.py (Versão corrigida para compatibilidade com API)
 from database import get_connection
 from exceptions import ProdutoNaoEncontradoError, EstoqueInsuficienteError
 
 class VendaRepo:
-  def registrar_venda(self, produto_id, quantidade):
+
+    def listar_vendas(self):
+        conn = None
+        try:
+            conn = get_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            sql = """
+                SELECT 
+                    v.id AS venda_id,
+                    v.produto_id,
+                    v.quantidade,
+                    v.valor_total,
+                    v.data_venda,
+                    p.nome AS produto_nome,
+                    p.preco AS produto_preco
+                FROM vendas v
+                JOIN produtos p ON p.id = v.produto_id
+                ORDER BY v.id DESC
+            """
+
+            cursor.execute(sql)
+            vendas = cursor.fetchall()
+            
+            # Converter datetime para string
+            for venda in vendas:
+                if venda.get('data_venda'):
+                    venda['data_venda'] = venda['data_venda'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            return vendas
+
+        except Exception as e:
+            print("Erro ao listar vendas:", e)
+            raise e
+
+        finally:
+            if conn:
+                conn.close()
+
+    def buscar_por_periodo(self, data_inicio, data_fim):
+        """Busca vendas em um período específico"""
+        conn = None
+        try:
+            conn = get_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            sql = """
+                SELECT 
+                    v.id AS venda_id,
+                    v.produto_id,
+                    v.quantidade,
+                    v.valor_total,
+                    v.data_venda,
+                    p.nome AS produto_nome,
+                    p.preco AS produto_preco
+                FROM vendas v
+                JOIN produtos p ON p.id = v.produto_id
+                WHERE DATE(v.data_venda) BETWEEN %s AND %s
+                ORDER BY v.data_venda DESC
+            """
+
+            cursor.execute(sql, (data_inicio, data_fim))
+            vendas = cursor.fetchall()
+            
+            # Converter datetime para string
+            for venda in vendas:
+                if venda.get('data_venda'):
+                    venda['data_venda'] = venda['data_venda'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            return vendas
+
+        except Exception as e:
+            print("Erro ao buscar vendas por período:", e)
+            raise e
+
+        finally:
+            if conn:
+                conn.close()
+
+    def registrar_venda(self, produto_id, quantidade):
+        """
+        Registra uma venda e retorna (venda_id, valor_total)
+        IMPORTANTE: Retorna tupla para compatibilidade com api.py
+        """
         if quantidade <= 0:
             raise ValueError("A quantidade deve ser maior que zero.")
 
@@ -13,110 +96,61 @@ class VendaRepo:
         
         try:
             conn = get_connection()
-            # Desativa o autocommit para gerenciar a transação manualmente
             conn.autocommit = False 
             cursor = conn.cursor(dictionary=True)
             
-            # 1. BUSCAR PRODUTO (FOR UPDATE para bloqueio otimista)
-            # Tabela: produtos. Colunas: preco, estoque.
+            # 1. Buscar produto com lock
             sql_produto = "SELECT id, preco, estoque FROM produtos WHERE id = %s FOR UPDATE"
             cursor.execute(sql_produto, (produto_id,))
             produto = cursor.fetchone()
 
             if not produto:
-                raise ProdutoNaoEncontradoError(f"Produto ID {produto_id} não encontrado.")
+                raise ProdutoNaoEncontradoError(
+                    f"Produto ID {produto_id} não encontrado."
+                )
             
-            # 2. VERIFICAR ESTOQUE
+            # 2. Verificar estoque
             if produto['estoque'] < quantidade:
                 raise EstoqueInsuficienteError(
                     f"Estoque insuficiente. Disponível: {produto['estoque']}, Solicitado: {quantidade}"
                 )
 
-            # 3. CALCULAR TOTAIS
+            # 3. Calcular valores
             preco_unitario = produto['preco']
             valor_total_calculado = preco_unitario * quantidade
             
-            # 4. INSERIR NA TABELA VENDAS (Tabela principal no seu schema)
-            # Colunas usadas: produto_id, quantidade, valor_total.
+            # 4. Inserir venda
             sql_insert_venda = """
                 INSERT INTO vendas (produto_id, quantidade, valor_total) 
                 VALUES (%s, %s, %s)
             """
-            # data_venda não precisa ser inserida, pois tem DEFAULT CURRENT_TIMESTAMP
-            cursor.execute(sql_insert_venda, (produto_id, quantidade, valor_total_calculado))
-            venda_id = cursor.lastrowid # Pega o ID da Venda
+            cursor.execute(
+                sql_insert_venda, 
+                (produto_id, quantidade, valor_total_calculado)
+            )
+            venda_id = cursor.lastrowid 
             
             if not venda_id:
-                 raise Error("Falha ao obter o ID da venda inserida.")
+                raise Exception("Falha ao obter o ID da venda inserida.")
             
-            # 5. ATUALIZAR ESTOQUE
-            sql_update_estoque = "UPDATE produtos SET estoque = estoque - %s WHERE id = %s"
+            # 5. Atualizar estoque
+            sql_update_estoque = """
+                UPDATE produtos SET estoque = estoque - %s WHERE id = %s
+            """
             cursor.execute(sql_update_estoque, (quantidade, produto_id))
-            
-            # 6. COMMIT: Salva todas as alterações juntas (Transação)
+
+            # 6. Commit final
             conn.commit()
-            
-            return venda_id, valor_total_calculado
-        
+
+            # CORRIGIDO: Retorna tupla (venda_id, valor_total)
+            return (venda_id, valor_total_calculado)
+
         except Exception as e:
-            # Em caso de erro, desfaz todas as operações no DB
             if conn:
                 conn.rollback()
-            # Relança a exceção para ser tratada no main.py
+            print("Erro ao registrar venda:", e)
             raise e
-            
-        finally:
-            if conn:
-                conn.autocommit = True # Restaura o autocommit
-                conn.close()
 
-  def listar_vendas(self):
-      conn = get_connection()
-      cursor = conn.cursor(dictionary=True)
-
-      sql = """SELECT 
-                    v.id AS venda_id, 
-                    p.nome AS produto_nome, 
-                    v.quantidade,
-                    v.valor_total, 
-                    v.data_venda
-                FROM vendas v
-                JOIN produtos p ON v.produto_id = p.id
-                ORDER BY v.data_venda DESC"""
-      cursor.execute(sql)
-      vendas = cursor.fetchall()
-      
-      cursor.close()
-      conn.close()
-      
-      return vendas
-  
-  def buscar_por_periodo(self, data_inicio, data_fim):
-        conn = None
-        try:
-            conn = get_connection()
-            cursor = conn.cursor(dictionary=True) 
-            
-            # Consulta na tabela vendas (plural)
-            sql = """
-                SELECT 
-                    v.id AS venda_id, 
-                    p.nome AS produto_nome, 
-                    v.quantidade,
-                    v.valor_total, 
-                    v.data_venda
-                FROM vendas v
-                JOIN produtos p ON v.produto_id = p.id
-                WHERE v.data_venda BETWEEN %s AND %s 
-                ORDER BY v.data_venda DESC
-            """
-            cursor.execute(sql, (data_inicio, data_fim))
-            return cursor.fetchall()
-            
-        except Exception as e:
-            print(f"Erro ao buscar vendas por período: {e}")
-            return []
-            
         finally:
             if conn:
                 conn.close()

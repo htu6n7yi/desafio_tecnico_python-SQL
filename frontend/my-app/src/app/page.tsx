@@ -90,6 +90,18 @@ const [destaque, setDestaque] = useState<any>(null);
       </svg>
     }
   />
+
+  <CardDashboard
+    title="Valor total de vendas: "
+    value={`R$ ${vendas.reduce((total: number, venda: any) => total + venda.valor_total, 0).toFixed(2)}`}
+    subtitle={"Valor acumulado de todas as vendas"}
+    icon={
+      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2v2m0 16v2m8-10h2M2 12H4m15.364-6.364l1.414 1.414M4.222 19.778l1.414-1.414M19.778 19.778l-1.414-1.414M4.222 4.222l1.414 1.414"/>
+      </svg>
+    }
+  />
                 
             </div>
         </section>
