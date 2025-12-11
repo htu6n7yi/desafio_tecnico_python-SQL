@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useState } from 'react';
 import { X, Plus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';

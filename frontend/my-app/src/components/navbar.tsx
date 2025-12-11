@@ -85,7 +85,7 @@ export default function Navbar() {
                 <Link href="/produtos" className="text-lg text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>
                   Produtos
                 </Link>
-                <Link href="/sales" className="text-lg text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>
+                <Link href="/vendas" className="text-lg text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>
                   Vendas
                 </Link>
 
