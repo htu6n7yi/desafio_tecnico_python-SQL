@@ -7,7 +7,7 @@ import { z } from 'zod';
 // Schema de validação Zod
 const productSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório").max(100, "Nome deve ter no máximo 100 caracteres"),
-  categoria: z.string().min(1, "Categoria é obrigatória"),
+  categoria: z.string().min(1, "Categoria é obrigatória").max(50, "Categoria deve ter no máximo 50 caracteres"),
   preco: z.number({ invalid_type_error: "Preço deve ser um número" }).positive("Preço deve ser maior que zero"),
   estoque: z.number({ invalid_type_error: "Estoque deve ser um número" }).min(0, "Estoque não pode ser negativo")
 });
@@ -167,8 +167,9 @@ export default function CreateProductDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [usarCategoriaCustomizada, setUsarCategoriaCustomizada] = useState(false);
 
-  // Lista de categorias padrão se não for fornecida
+  // Lista de categorias - usa as do banco se existirem, senão usa sugestões padrão
   const categoriasDisponiveis = categorias.length > 0 
     ? categorias 
     : ['Eletrônicos', 'Roupas', 'Alimentos', 'Livros', 'Móveis', 'Outros'];
@@ -230,7 +231,7 @@ export default function CreateProductDialog({
         },
         body: JSON.stringify({
           nome: formData.nome,
-          categoria: formData.categoria,
+          categoria: formData.categoria?.trim(), // Remove espaços extras
           preco: Number(formData.preco),
           estoque: Number(formData.estoque)
         }),
@@ -270,6 +271,7 @@ export default function CreateProductDialog({
     setErrors({});
     setSubmitStatus('idle');
     setErrorMessage('');
+    setUsarCategoriaCustomizada(false);
     onClose();
   };
 
@@ -321,22 +323,67 @@ export default function CreateProductDialog({
           disabled={isSubmitting}
         />
 
-        {/* Categoria */}
-        <Select
-          label="Categoria"
-          value={formData.categoria}
-          onChange={(e) => handleChange('categoria', e.target.value)}
-          error={errors.categoria}
-          required
-          disabled={isSubmitting}
-        >
-          <option value="">Selecione uma categoria</option>
-          {categoriasDisponiveis.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </Select>
+        {/* Categoria - Híbrido: Select OU Input customizado */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">
+              Categoria <span className="text-red-500">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setUsarCategoriaCustomizada(!usarCategoriaCustomizada);
+                setFormData(prev => ({ ...prev, categoria: '' }));
+              }}
+              className="text-xs text-blue-600 hover:text-blue-700 underline"
+              disabled={isSubmitting}
+            >
+              {usarCategoriaCustomizada ? 'Usar categorias sugeridas' : 'Criar nova categoria'}
+            </button>
+          </div>
+
+          {usarCategoriaCustomizada ? (
+            // Campo de texto para categoria customizada
+            <div>
+              <input
+                type="text"
+                placeholder="Digite uma nova categoria"
+                value={formData.categoria}
+                onChange={(e) => handleChange('categoria', e.target.value)}
+                className={`flex h-10 w-full rounded-md border ${errors.categoria ? 'border-red-500' : 'border-gray-300'} bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                required
+                disabled={isSubmitting}
+                maxLength={50}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Máximo de 50 caracteres
+              </p>
+            </div>
+          ) : (
+            // Select com categorias existentes/sugeridas
+            <select
+              value={formData.categoria}
+              onChange={(e) => handleChange('categoria', e.target.value)}
+              className={`flex h-10 w-full rounded-md border ${errors.categoria ? 'border-red-500' : 'border-gray-300'} bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+              required
+              disabled={isSubmitting}
+            >
+              <option value="">Selecione uma categoria</option>
+              {categoriasDisponiveis.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {errors.categoria && (
+            <p className="text-xs text-red-500 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              {errors.categoria}
+            </p>
+          )}
+        </div>
 
         {/* Preço e Estoque em Grid */}
         <div className="grid grid-cols-2 gap-4">
