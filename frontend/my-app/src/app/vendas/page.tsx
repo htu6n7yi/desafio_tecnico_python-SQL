@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, X, Package, DollarSign, Calendar, Loader2 } from 'lucide-react';
+import CreateVendaDialog from '@/components/CreateVendaDialog';
 
 // Types
 interface Venda {
@@ -275,6 +276,10 @@ export default function VendasPage() {
 
   const filtrosAtivos = Object.values(filtros).some(v => v !== '');
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -284,11 +289,19 @@ export default function VendasPage() {
             <h1 className="text-3xl font-bold text-gray-900">Vendas</h1>
             <p className="text-gray-600 mt-1">Gerencie todas as vendas realizadas</p>
           </div>
-          <Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Venda
           </Button>
         </div>
+
+        <CreateVendaDialog
+  isOpen={isDialogOpen}
+  onClose={() => setIsDialogOpen(false)}
+  onSuccess={() => {
+    carregarVendas(); // Recarrega lista de vendas
+  }}
+/>
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
