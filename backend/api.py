@@ -158,13 +158,19 @@ async def atualizar_produto(produto_id: int, produto: ProdutoUpdate):
         if not produto_existente:
             raise HTTPException(status_code=404, detail="Produto não encontrado")
         
-        # Atualiza apenas os campos fornecidos
-        if produto.estoque is not None:
-            produto_repo.atualizar_estoque(produto_id, produto.estoque)
+        # Atualiza o produto com os campos fornecidos
+        produto_repo.atualizar_produto(
+            produto_id=produto_id,
+            nome=produto.nome,
+            categoria=produto.categoria,
+            preco=produto.preco,
+            estoque=produto.estoque
+        )
         
         # Busca o produto atualizado
         produto_atualizado = produto_repo.buscar_por_id(produto_id)
         return produto_atualizado
+        
     except HTTPException:
         raise
     except Exception as e:
